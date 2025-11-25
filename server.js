@@ -1,0 +1,134 @@
+// server.js
+// Main Express server for Coursework
+
+// -------------------------
+// 1. IMPORT DEPENDENCIES
+// -------------------------
+const express = require("express");
+const cors = require("cors");
+const { MongoClient } = require("mongodb");
+require("dotenv").config();
+
+// -------------------------
+// 2. CREATE EXPRESS APP
+// -------------------------
+const app = express();
+app.use(express.json());
+app.use(cors());
+
+// -------------------------
+// 3. LOGGER MIDDLEWARE (Required for marks)
+// -------------------------
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
+// -------------------------
+// 4. STATIC MIDDLEWARE FOR IMAGES
+// -------------------------
+app.use("/images", express.static("images"));
+
+// -------------------------
+// 5. CONNECT TO MONGODB ATLAS
+// -------------------------
+const uri = process.env.MONGO_URI;
+const client = new MongoClient(uri);
+
+let lessonsCollection;
+let ordersCollection;
+
+async function connectDB() {
+  try {
+    await client.connect();
+    const db = client.db(process.env.DB_NAME);
+
+    lessonsCollection = db.collection("lessons");
+    ordersCollection = db.collection("orders");
+
+    console.log("✅ Connected to MongoDB Atlas");
+  } catch (err) {
+    console.error("❌ MongoDB connection failed:", err);
+  }
+}
+connectDB();
+
+// -------------------------
+// 6. DEFAULT ROUTE
+// -------------------------
+app.get("/", (req, res) => {
+  res.send("Backend running for CST3144 coursework!");
+});
+
+// -------------------------
+// GET all lessons
+// -------------------------
+app.get("/lessons", async (req, res) => {
+  try {
+    const lessons = await lessonsCollection.find({}).toArray();
+    res.json(lessons);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch lessons" });
+  }
+});
+
+// -------------------------
+// SEARCH lessons
+// -------------------------
+app.get("/lessons/search", async (req, res) => {
+  try {
+    const query = req.query.q || "";
+
+    const results = await lessonsCollection
+      .find({
+        $or: [
+          { subject: { $regex: query, $options: "i" } },
+          { location: { $regex: query, $options: "i" } },
+        ],
+      })
+      .toArray();
+
+    res.json(results);
+  } catch (error) {
+    res.status(500).json({ error: "Search failed" });
+  }
+});
+
+// -------------------------
+// PLACE ORDER
+// -------------------------
+// Place Order
+app.post("/place-order", async (req, res) => {
+  const db = client.db("school");
+  const lessonsCollection = db.collection("lessons");
+  const ordersCollection = db.collection("orders");
+
+  const order = req.body;
+
+  try {
+    // Reduce spaces for each lesson
+    for (let item of order.items) {
+      await lessonsCollection.updateOne(
+        { id: item.id },
+        { $inc: { availableSpaces: -item.quantity } }
+      );
+    }
+
+    // Save order
+    await ordersCollection.insertOne(order);
+
+    res.json({ message: "Order placed successfully!", success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Order failed", success: false });
+  }
+});
+
+// -------------------------
+// 7. START SERVER
+// -------------------------
+const PORT = process.env.PORT || 4000;
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
