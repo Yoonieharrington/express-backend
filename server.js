@@ -99,7 +99,7 @@ app.get("/lessons/search", async (req, res) => {
 // -------------------------
 // Place Order
 app.post("/place-order", async (req, res) => {
-  const db = client.db("school");
+  const db = client.db(process.env.DB_NAME);
   const lessonsCollection = db.collection("lessons");
   const ordersCollection = db.collection("orders");
 
