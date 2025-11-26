@@ -6,6 +6,10 @@ const cors = require("cors");
 const { MongoClient } = require("mongodb");
 require("dotenv").config();
 
+console.log("🔍 Loaded environment variables:");
+console.log("MONGO_URI =", process.env.MONGO_URI);
+console.log("DB_NAME =", process.env.DB_NAME);
+
 const app = express();
 app.use(express.json());
 app.use(cors());
