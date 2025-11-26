@@ -20,7 +20,7 @@ app.use((req, res, next) => {
 app.use("/images", express.static("images"));
 
 // MongoDB connection
-const uri = process.env.MONGO_URI;
+const uri = process.env.MONGO_URL;
 const client = new MongoClient(uri);
 
 let lessonsCollection;
