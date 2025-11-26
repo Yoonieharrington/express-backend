@@ -1,37 +1,25 @@
 // server.js
 // Main Express server for Coursework
 
-// -------------------------
-// 1. IMPORT DEPENDENCIES
-// -------------------------
 const express = require("express");
 const cors = require("cors");
 const { MongoClient } = require("mongodb");
 require("dotenv").config();
 
-// -------------------------
-// 2. CREATE EXPRESS APP
-// -------------------------
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// -------------------------
-// 3. LOGGER MIDDLEWARE (Required for marks)
-// -------------------------
+// Logger middleware
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
 });
 
-// -------------------------
-// 4. STATIC MIDDLEWARE FOR IMAGES
-// -------------------------
+// Serve images
 app.use("/images", express.static("images"));
 
-// -------------------------
-// 5. CONNECT TO MONGODB ATLAS
-// -------------------------
+// MongoDB connection
 const uri = process.env.MONGO_URI;
 const client = new MongoClient(uri);
 
@@ -53,16 +41,12 @@ async function connectDB() {
 }
 connectDB();
 
-// -------------------------
-// 6. DEFAULT ROUTE
-// -------------------------
+// Default route
 app.get("/", (req, res) => {
   res.send("Backend running for CST3144 coursework!");
 });
 
-// -------------------------
-// GET all lessons
-// -------------------------
+// Get all lessons
 app.get("/lessons", async (req, res) => {
   try {
     const lessons = await lessonsCollection.find({}).toArray();
@@ -72,9 +56,7 @@ app.get("/lessons", async (req, res) => {
   }
 });
 
-// -------------------------
-// SEARCH lessons
-// -------------------------
+// Search lessons
 app.get("/lessons/search", async (req, res) => {
   try {
     const query = req.query.q || "";
@@ -94,10 +76,7 @@ app.get("/lessons/search", async (req, res) => {
   }
 });
 
-// -------------------------
-// PLACE ORDER
-// -------------------------
-// Place Order
+// Place order
 app.post("/place-order", async (req, res) => {
   const db = client.db(process.env.DB_NAME);
   const lessonsCollection = db.collection("lessons");
@@ -106,7 +85,6 @@ app.post("/place-order", async (req, res) => {
   const order = req.body;
 
   try {
-    // Reduce spaces for each lesson
     for (let item of order.items) {
       await lessonsCollection.updateOne(
         { id: item.id },
@@ -114,7 +92,6 @@ app.post("/place-order", async (req, res) => {
       );
     }
 
-    // Save order
     await ordersCollection.insertOne(order);
 
     res.json({ message: "Order placed successfully!", success: true });
@@ -124,11 +101,8 @@ app.post("/place-order", async (req, res) => {
   }
 });
 
-// -------------------------
-// 7. START SERVER
-// -------------------------
+// Start server
 const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
