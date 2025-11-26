@@ -1,5 +1,4 @@
 // server.js
-// Main Express server for Coursework
 
 const express = require("express");
 const cors = require("cors");
