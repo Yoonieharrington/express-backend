@@ -35,9 +35,11 @@ async function connectDB() {
     ordersCollection = db.collection("orders");
 
     console.log("✅ Connected to MongoDB Atlas");
-  } catch (err) {
+   } catch (err) {
     console.error("❌ MongoDB connection failed:", err);
+    process.exit(1);   // 🔥 stop server so Render logs show the real error
   }
+
 }
 connectDB();
 
